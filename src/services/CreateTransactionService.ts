@@ -22,6 +22,24 @@ class CreateTransactionService {
       throw new AppError('Invalid transaction type!', 400);
     }
 
+    const transactions = await transactionRepository.find({
+      where: { type: 'income' },
+    });
+
+    const transactionsIncomeBalance = transactions.reduce(
+      (balance, transaction) => {
+        return transaction.value + balance;
+      },
+      0,
+    );
+
+    if (value > transactionsIncomeBalance) {
+      throw new AppError(
+        "You can't create a outcome width a hights value than your incomes.",
+        400,
+      );
+    }
+
     const foundedCategory = await categoryRepository.findOne({
       where: { title: category },
     });
