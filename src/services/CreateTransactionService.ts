@@ -1,36 +1,52 @@
 import { getRepository } from 'typeorm';
 
 import AppError from '../errors/AppError';
+import Category from '../models/Category';
 import Transaction from '../models/Transaction';
 
 interface Request {
   title: string;
-  type: 'income' | 'outcome';
-  category: string;
   value: number;
+  category: string;
+  type: 'income' | 'outcome';
 }
 
 class CreateTransactionService {
-  public async execute({
-    title,
-    type,
-    value,
-    category,
-  }: Request): Promise<Transaction> {
+  public async execute(data: Request): Promise<Transaction> {
+    const { title, type, value, category } = data;
+
+    const categoryRepository = getRepository(Category);
     const transactionRepository = getRepository(Transaction);
 
     if (type !== 'income' && type !== 'outcome') {
       throw new AppError('Invalid transaction type!', 400);
     }
 
-    const transaction = transactionRepository.create({
+    const foundedCategory = await categoryRepository.findOne({
+      where: { title: category },
+    });
+
+    if (!foundedCategory) {
+      const createdCategory = await categoryRepository.save({
+        title: category,
+      });
+
+      const transaction = await transactionRepository.save({
+        title,
+        type,
+        value,
+        category_id: createdCategory.id,
+      });
+
+      return transaction;
+    }
+
+    const transaction = await transactionRepository.save({
       title,
       type,
       value,
-      category,
+      category_id: foundedCategory.id,
     });
-
-    await transactionRepository.save(transaction);
 
     return transaction;
   }

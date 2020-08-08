@@ -1,10 +1,10 @@
 import { Router } from 'express';
 
-import { getCustomRepository } from 'typeorm';
+import { getCustomRepository, JoinTable } from 'typeorm';
 import TransactionsRepository from '../repositories/TransactionsRepository';
 
 import CreateTransactionService from '../services/CreateTransactionService';
-import ShowTransactionsBalance from '../services/ShowTransactionsBalance';
+import ShowTransactionsBalance from '../services/ShowTransactionsBalanceService';
 
 const transactionRouter = Router();
 
@@ -12,7 +12,9 @@ transactionRouter.get('/', async (request, response) => {
   try {
     const transactionsRepository = getCustomRepository(TransactionsRepository);
 
-    const transactions = await transactionsRepository.find();
+    const transactions = await transactionsRepository.find({
+      relations: ['category_id'],
+    });
     const showBalance = new ShowTransactionsBalance();
 
     const balance = await showBalance.execute();
