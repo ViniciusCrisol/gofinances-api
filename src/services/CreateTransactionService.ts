@@ -1,25 +1,36 @@
-import TransactionsRepository from '../repositories/TransactionsRepository';
+import { getRepository } from 'typeorm';
+
+import AppError from '../errors/AppError';
 import Transaction from '../models/Transaction';
 
-type Request = Omit<Transaction, 'id'>;
+interface Request {
+  title: string;
+  type: 'income' | 'outcome';
+  category: string;
+  value: number;
+}
 
 class CreateTransactionService {
-  private transactionsRepository: TransactionsRepository;
+  public async execute({
+    title,
+    type,
+    value,
+    category,
+  }: Request): Promise<Transaction> {
+    const transactionRepository = getRepository(Transaction);
 
-  constructor(transactionsRepository: TransactionsRepository) {
-    this.transactionsRepository = transactionsRepository;
-  }
-
-  public execute({ title, type, value }: Request): Request {
     if (type !== 'income' && type !== 'outcome') {
-      throw Error('Invalid transaction type!');
+      throw new AppError('Invalid transaction type!', 400);
     }
 
-    const transaction = this.transactionsRepository.create({
+    const transaction = transactionRepository.create({
       title,
       type,
       value,
+      category,
     });
+
+    await transactionRepository.save(transaction);
 
     return transaction;
   }
