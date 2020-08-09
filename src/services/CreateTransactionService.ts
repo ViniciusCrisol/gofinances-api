@@ -1,8 +1,9 @@
-import { getRepository } from 'typeorm';
+import { getRepository, getCustomRepository } from 'typeorm';
 
 import AppError from '../errors/AppError';
 import Category from '../models/Category';
 import Transaction from '../models/Transaction';
+import TransactionsRepository from '../repositories/TransactionsRepository';
 
 interface Request {
   title: string;
@@ -16,26 +17,17 @@ class CreateTransactionService {
     const { title, type, value, category } = data;
 
     const categoryRepository = getRepository(Category);
-    const transactionRepository = getRepository(Transaction);
+    const transactionRepository = getCustomRepository(TransactionsRepository);
 
     if (type !== 'income' && type !== 'outcome') {
       throw new AppError('Invalid transaction type!', 400);
     }
 
-    const transactions = await transactionRepository.find({
-      where: { type: 'income' },
-    });
+    const balance = await transactionRepository.getBalance();
 
-    const transactionsIncomeBalance = transactions.reduce(
-      (balance, transaction) => {
-        return transaction.value + balance;
-      },
-      0,
-    );
-
-    if (value > transactionsIncomeBalance) {
+    if (value > balance.total && type === 'outcome') {
       throw new AppError(
-        "You can't create a outcome width a hights value than your incomes.",
+        'You can not create an outcome with a value greater than your income.',
         400,
       );
     }
