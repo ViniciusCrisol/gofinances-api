@@ -20,9 +20,18 @@ transactionRouter.get('/', async (request, response) => {
     relations: ['category_id'],
   });
 
+  const serializedTransactions = transactions.map(transaction => ({
+    id: transaction.id,
+    title: transaction.title,
+    type: transaction.type,
+    value: transaction.value,
+    created_at: transaction.created_at,
+    category: transaction.category_id,
+  }));
+
   const balance = await transactionsRepository.getBalance();
 
-  return response.json({ transactions, balance });
+  return response.json({ transactions: serializedTransactions, balance });
 });
 
 transactionRouter.post('/', async (request, response) => {
