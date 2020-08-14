@@ -18,6 +18,9 @@ transactionRouter.get('/', async (request, response) => {
 
   const transactions = await transactionsRepository.find({
     relations: ['category_id'],
+    order: {
+      created_at: 'DESC',
+    },
   });
 
   const serializedTransactions = transactions.map(transaction => ({
